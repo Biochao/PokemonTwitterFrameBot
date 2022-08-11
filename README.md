@@ -1,5 +1,6 @@
 # PokemonFrameBot
 Every Pokemon Frame in Order Twitter Bot
+https://twitter.com/PKMNFrames
 
 Modified from @spacebruce bot
 
