@@ -35,10 +35,10 @@ import os.path
 from glob import glob
 from pytgbot import Bot
 
-print("Pokemon Framebot v2.5")
+print("Pokemon Framebot v2.6")
 
 #login
-Online = True #Set to False for offline debug mode
+Online = False #Set to False for offline debug mode
 ApiKey = ""
 ApiKeySecret = ""
 AccessToken = ""
@@ -50,12 +50,12 @@ CHAT=''  # can be a @username or a id, change this to your own @username or id f
 bot = Bot(API_KEY)
 
 # config
-Caption = r"Pokemon Season 1 Episode 1 - Pokemon I choose you! - " # post caption
-Path = "./pokemonEpisodes/s1e1/*.jpg" # image search path/parameters. uses glob syntax (https://en.wikipedia.org/wiki/Glob_%28programming%29#Syntax). ".*.jpg" for same dir, "./images/*.jpg" for images subdir, etc
+Caption = r"Pokémon Season # Episode # - Title - " # post caption
+hashtags = r"#pokemon #anime #anipoke"
+Path = "../pokemonFrames/s1e1sub/*.jpg" # image search path/parameters. uses glob syntax (https://en.wikipedia.org/wiki/Glob_%28programming%29#Syntax). ".*.jpg" for same dir, "./images/*.jpg" for images subdir, etc
 Interval = 1   # seconds between individual tweets
-groupNum = 3 # number of tweets in a group
-groupInterval = 15   # minutes between groups
-DelayStart = False
+groupNum = 4 # number of tweets in a group
+groupInterval = 18   # minutes between groups
 
 IconFile = "\icon.jpg"
 HeaderFile = "\header.jpg"
@@ -81,15 +81,20 @@ def GetFiles(rootPath, verbose):
 
 def SendTweet(message,filename):
         Name = os.path.splitext(os.path.basename(filename))[0]
-        print("post", Name, filename)
-        Status = f"{Caption} Frame {index+1} of {ListLength}"
+        Status = f"{Caption} Frame {index+1} of {ListLength} {hashtags}"
+        sens = "cut"
+        print(Status)
         if Online:      # Offline mode always works
                 try:
                         # api.update_with_media(filename, status=Name)
                         file = api.media_upload(filename)
-                        api.update_status(Status, media_ids = [file.media_id])
+                        if sens in filename:
+                            api.update_status(Status, media_ids = [file.media_id], possibly_sensitive = true)
+                        else:
+                            api.update_status(Status, media_ids = [file.media_id])
                         return True
                 except:
+                        bot.send_message(CHAT, "Twitter Bot encountered and error and is trying again!")
                         print("posting broke somewhere, trying again")
                         for e in sys.exc_info():
                                 print(e)
@@ -113,6 +118,7 @@ def ChangeHeader(path):
                 
 # initial state
 StartIndex = 0
+Now = datetime.datetime.now()
 
 # load images
 ImageList = GetFiles(Path, True)
@@ -124,6 +130,11 @@ if not os.path.isfile("state.txt"):
         with open("state.txt","w") as saveFile:
                 saveFile.write(ImageList[0])
         print("Starting new state file")
+        TimeLength = ListLength/(60/groupInterval*groupNum)
+        print(f"Running for {TimeLength} hours")
+        endtime = Now + datetime.timedelta(hours = TimeLength)
+        print(f"EndTime: {endtime}")
+        bot.send_message(CHAT, f"Twitter Bot started {Caption} Running until {endtime}")
 else:
         with open("state.txt","r") as saveFile:
                 line = saveFile.readlines()
@@ -133,7 +144,12 @@ else:
                 StartIndex = ImageList.index(lastImage)
         except:
                 StartIndex = 0
-        print("Resuming at " + ImageList[StartIndex])
+                print("Resuming at " + ImageList[StartIndex])
+                TimeLength = ListLength-ImageList[StartIndex]/(60/groupInterval*groupNum)
+                print(f"Running for {TimeLength} hours")
+                endtime = Now + datetime.timedelta(hours = TimeLength)
+                print(f"EndTime: {endtime}")
+                bot.send_message(CHAT, f"Twitter Bot resumed! Running until {endtime}")
 
 # twitter login
 if Online:
@@ -164,10 +180,10 @@ while(index <= ListLength):
                                 ImageName = ImageList[index]
 
                                 print("file ", index, "/", ListLength-1)
+                                print(ImageName)
                                 sent = SendTweet(Caption, ImageName)
                                 if sent:
                                         print("OK!")
-                                        print(f"{Caption}")
                                         group = group+1
                                         print("On to the next image")
                                         try:
@@ -177,6 +193,7 @@ while(index <= ListLength):
                                                         ImageName = ImageList[next]
                                                         saveFile.write(ImageName)
                                         except:
+                                                bot.send_message(CHAT, "Twitter Bot encountered and error!")
                                                 print("Progress not saved to file!! (", sys.exc_info()[0], ")")
                                         DoPost = False  #no need to retry
                                         index = next
@@ -233,5 +250,5 @@ while(index <= ListLength):
                                         api.update_status("#ToBeContinued - End of the episode!")
                                         bot.send_message(CHAT, "Twitter Bot - End of the episode!")
                                     print("Waiting until user input")
-                                    time.sleep(9999*minutes) #Wait for a long time
+                                    input("Close the window or press enter to restart...")
 print("Sequence End!")
