@@ -10,4 +10,6 @@ Features include:
   
   • Telegram bot error reporting and end of episode messages
   
+  • Sensitive images support
+  
   • groups of tweets with variable delay
