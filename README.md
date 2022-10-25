@@ -8,7 +8,7 @@ Disclamer: I'm not a python developer I don't know what I'm doing...
 
 Features include:
   
-  • Telegram bot error reporting and end of episode messages
+  • Discord error reporting and end of episode messages
   
   • Sensitive images support
   
