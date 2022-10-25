@@ -26,6 +26,9 @@ license;
 	 0. You just DO WHAT THE FUCK YOU WANT TO.
 	 http://www.wtfpl.net/about/
 
+import requests
+import discord
+from discord import Webhook, RequestsWebhookAdapter, File
 import tweepy
 import time
 import sys
@@ -33,26 +36,25 @@ import pause
 import datetime
 import os.path
 from glob import glob
-from pytgbot import Bot
 
-print("Pokemon Framebot v2.6")
+print("Pokemon Framebot v2.7")
 
 #login
-Online = False #Set to False for offline debug mode
+Online = True #Set to False for offline debug mode
 ApiKey = ""
 ApiKeySecret = ""
 AccessToken = ""
 AccessTokenSecret = ""
 
-#Telegram Error Reporting
-API_KEY=''  # change this to the token you get from @BotFather
-CHAT=''  # can be a @username or a id, change this to your own @username or id for example.
-bot = Bot(API_KEY)
+# Discord Error Reporting
+webhookid = 123456890
+token = ""
+webhook = Webhook.partial(webhookid, token, adapter=RequestsWebhookAdapter())
 
 # config
-Caption = r"Pokémon Season # Episode # - Title - " # post caption
+Caption = r"Pokémon Season 1 Episode 14 - Electric Shock Showdown - " # post caption
 hashtags = r"#pokemon #anime #anipoke"
-Path = "../pokemonFrames/s1e1sub/*.jpg" # image search path/parameters. uses glob syntax (https://en.wikipedia.org/wiki/Glob_%28programming%29#Syntax). ".*.jpg" for same dir, "./images/*.jpg" for images subdir, etc
+Path = "../pokemonFrames/s1e14sub/*.jpg" # image search path/parameters. uses glob syntax (https://en.wikipedia.org/wiki/Glob_%28programming%29#Syntax). ".*.jpg" for same dir, "./images/*.jpg" for images subdir, etc
 Interval = 1   # seconds between individual tweets
 groupNum = 4 # number of tweets in a group
 groupInterval = 18   # minutes between groups
@@ -64,7 +66,7 @@ HeaderFile = "\header.jpg"
 
 def Panic():
         # api.update_status(ErrorMessage)
-        bot.send_message(CHAT, "Twitter Bot encountered and error!")
+        webhook.send("Twitter Bot encountered and error!")
         print(ErrorMessage)
         Errors = 0
 
@@ -94,7 +96,7 @@ def SendTweet(message,filename):
                             api.update_status(Status, media_ids = [file.media_id])
                         return True
                 except:
-                        bot.send_message(CHAT, "Twitter Bot encountered and error and is trying again!")
+                        webhook.send("Twitter Bot encountered and error and is trying again!")
                         print("posting broke somewhere, trying again")
                         for e in sys.exc_info():
                                 print(e)
@@ -134,7 +136,7 @@ if not os.path.isfile("state.txt"):
         print(f"Running for {TimeLength} hours")
         endtime = Now + datetime.timedelta(hours = TimeLength)
         print(f"EndTime: {endtime}")
-        bot.send_message(CHAT, f"Twitter Bot started {Caption} Running until {endtime}")
+        webhook.send(f"Twitter Bot started {Caption} Running until {endtime}")
 else:
         with open("state.txt","r") as saveFile:
                 line = saveFile.readlines()
@@ -149,7 +151,7 @@ else:
                 print(f"Running for {TimeLength} hours")
                 endtime = Now + datetime.timedelta(hours = TimeLength)
                 print(f"EndTime: {endtime}")
-                bot.send_message(CHAT, f"Twitter Bot resumed! Running until {endtime}")
+                webhook.send(f"Twitter Bot started {Caption} Running until {endtime}")
 
 # twitter login
 if Online:
@@ -193,7 +195,7 @@ while(index <= ListLength):
                                                         ImageName = ImageList[next]
                                                         saveFile.write(ImageName)
                                         except:
-                                                bot.send_message(CHAT, "Twitter Bot encountered and error!")
+                                                webhook.send("Twitter Bot encountered and error!")
                                                 print("Progress not saved to file!! (", sys.exc_info()[0], ")")
                                         DoPost = False  #no need to retry
                                         index = next
@@ -248,7 +250,7 @@ while(index <= ListLength):
                                     print("Sequence End!")
                                     if Online:
                                         api.update_status("#ToBeContinued - End of the episode!")
-                                        bot.send_message(CHAT, "Twitter Bot - End of the episode!")
+                                        webhook.send("Twitter Bot - End of the episode!")
                                     print("Waiting until user input")
                                     input("Close the window or press enter to restart...")
 print("Sequence End!")
