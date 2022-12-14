@@ -1,256 +1,164 @@
-author;
-	Original - 𝚜𝚙𝚊𝚌𝚎 ☆ 𝚋𝚛𝚞𝚌𝚎 (@spacebruce)
-    Modified - Biochao (@biochao)
-    
-needed;
-	pip install pause
-	pip install tweepy
-    pip install pytgbot
-instructions;
-	install python3
-	type the needed^ lines
-	put twitterbot.py in folder
-	put your twitter and telegram tokens in the config area below and change values as desired
-	click on twitterbot.py
-	???
-	profit
-license;
-	           DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
-	                   Version 2, December 2004
-	Copyright (C) 2004 Sam Hocevar <sam@hocevar.net>
-	Everyone is permitted to copy and distribute verbatim or modified
-	copies of this license document, and changing it is allowed as long
-	as the name is changed.
-	           DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
-	  TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
-	 0. You just DO WHAT THE FUCK YOU WANT TO.
-	 http://www.wtfpl.net/about/
-
-import requests
+import pysrt
+from pysrt.srttime import SubRipTime
+import tweepy
 import discord
 from discord import Webhook, RequestsWebhookAdapter, File
-import tweepy
+import os
 import time
-import sys
-import pause
 import datetime
-import os.path
-from glob import glob
 
-print("Pokemon Framebot v2.7")
+# Config
+frame_dir = r"C:/Users/framebot/bots/pokemonFrames/"
+season_num = 1
+episode_num = 24
+episode_name = "Pokemon-1x24-HaunterVersusKadabra" # Name of subtitle file
+tweet_text = r"Pokémon Season 1 Episode 24 - Haunter versus Kadabra"
+hashtags = r"#pokemon #s1e24 #anime #anipoke"
+# Timing Config
+delay = 1 # Seconds inbetween each Tweet
+wait_time = 900 # Seconds after a group of Tweets
+group = 5 # How many Tweets per group
+# Subtitle Config
+source_dir = "C:/Users/framebot/bots/sources/Season 01/" #Directory of the subtitle file
+sub_type = ".srt" # Format of subtitles
+# Use a subtitle file?
+subtitled = input('Does this episode have an external subtitle file (y/n)? ')
+if subtitled.lower() == 'y':
+    subs = pysrt.open(f"{source_dir}{episode_name}{sub_type}") # Full location of the subtitle file
+else:
+    subs = ""
 
-#login
-Online = True #Set to False for offline debug mode
-ApiKey = ""
-ApiKeySecret = ""
-AccessToken = ""
-AccessTokenSecret = ""
-
-# Discord Error Reporting
-webhookid = 123456890
-token = ""
-webhook = Webhook.partial(webhookid, token, adapter=RequestsWebhookAdapter())
-
-# config
-Caption = r"Pokémon Season 1 Episode 14 - Electric Shock Showdown - " # post caption
-hashtags = r"#pokemon #anime #anipoke"
-Path = "../pokemonFrames/s1e14sub/*.jpg" # image search path/parameters. uses glob syntax (https://en.wikipedia.org/wiki/Glob_%28programming%29#Syntax). ".*.jpg" for same dir, "./images/*.jpg" for images subdir, etc
-Interval = 1   # seconds between individual tweets
-groupNum = 4 # number of tweets in a group
-groupInterval = 18   # minutes between groups
-
-IconFile = "\icon.jpg"
-HeaderFile = "\header.jpg"
-
-# functions
-
-def Panic():
-        # api.update_status(ErrorMessage)
-        webhook.send("Twitter Bot encountered and error!")
-        print(ErrorMessage)
-        Errors = 0
-
-def GetFiles(rootPath, verbose):
-        foundfiles = glob(rootPath)
-        files = []
-        for item in foundfiles:
-                if (IconFile not in item) and (HeaderFile not in item):
-                        files.append(item)
-                else:
-                        if(verbose):    
-                                print("removed ", item)
-        return files
-
-def SendTweet(message,filename):
-        Name = os.path.splitext(os.path.basename(filename))[0]
-        Status = f"{Caption} Frame {index+1} of {ListLength} {hashtags}"
-        sens = "cut"
-        print(Status)
-        if Online:      # Offline mode always works
-                try:
-                        # api.update_with_media(filename, status=Name)
-                        file = api.media_upload(filename)
-                        if sens in filename:
-                            api.update_status(Status, media_ids = [file.media_id], possibly_sensitive = true)
-                        else:
-                            api.update_status(Status, media_ids = [file.media_id])
-                        return True
-                except:
-                        webhook.send("Twitter Bot encountered and error and is trying again!")
-                        print("posting broke somewhere, trying again")
-                        for e in sys.exc_info():
-                                print(e)
-                        return False
-        else:
-                return True
-
-def ChangeIcon(path):
-        print("Icon change ", path)
-        if Online:
-                File = open(path)
-                update_profile_image(path, File)
-                File.close()
-    
-def ChangeHeader(path):
-        print("Header change ", path)
-        if Online:
-                File = open(path)
-                update_profile_banner(path, File)
-                File.close()
-                
-# initial state
-StartIndex = 0
+# Initialize a counter variable to track how many frames of a group have been tweeted
+counter = 0
 Now = datetime.datetime.now()
 
-# load images
-ImageList = GetFiles(Path, True)
-ListLength = len(ImageList)
-print(ListLength, "files")
+# Online mode?
+connect_to_twitter = input('Do you want to connect to Twitter (y/n)? ')
 
-# resume state
-if not os.path.isfile("state.txt"):
-        with open("state.txt","w") as saveFile:
-                saveFile.write(ImageList[0])
-        print("Starting new state file")
-        TimeLength = ListLength/(60/groupInterval*groupNum)
-        print(f"Running for {TimeLength} hours")
-        endtime = Now + datetime.timedelta(hours = TimeLength)
-        print(f"EndTime: {endtime}")
-        webhook.send(f"Twitter Bot started {Caption} Running until {endtime}")
+# Replace these with your own Twitter API keys
+consumer_key = "YOUR_CONSUMER_KEY"
+consumer_secret = "YOUR_CONSUMER_SECRET"
+access_token = "YOUR_ACCESS_TOKEN"
+access_token_secret = "YOUR_ACCESS_TOKEN_SECRET"
+
+
+if connect_to_twitter.lower() == 'y':
+    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+    auth.set_access_token(access_token, access_token_secret)
+    api = tweepy.API(auth)
+    try:
+        api.verify_credentials()
+        print("Connected to Twitter!")
+    except:
+        print("Twitter not OK, try again")
+        time.sleep(10)
+  
+# Error Notifications?
+connect_to_discord = input('Do you want to report to Discord (y/n)? ')
+  
+# Discord Error Reporting
+webhookid = YOUR_WEBHOOK_ID
+token = "YOUR TOKEN"
+webhook = Webhook.partial(webhookid, token, adapter=RequestsWebhookAdapter())
+  
+# The folder where your images are stored (This only need to be changed if folder stucture changes. Currently set up for folders named like this: folder/s1e1/frames)
+image_folder = f"{frame_dir}s{season_num}e{episode_num}sub"
+print(f"Image folder: {image_folder} loaded")
+
+# Load the index from a file (or initialize it to 0 if the file doesn't exist)
+index_file = "progress.txt"
+if os.path.exists(index_file):
+    with open(index_file) as f:
+        index = int(f.read())
+    print("Progress file found. Resuming.")
+    if connect_to_discord.lower() == 'y':
+        webhook.send(f"Twitter Bot resuming at frame {index+1}")
 else:
-        with open("state.txt","r") as saveFile:
-                line = saveFile.readlines()
-                lastImage = line[0]
-                lastImage.replace(r"//",r"/")
-        try:
-                StartIndex = ImageList.index(lastImage)
-        except:
-                StartIndex = 0
-                print("Resuming at " + ImageList[StartIndex])
-                TimeLength = ListLength-ImageList[StartIndex]/(60/groupInterval*groupNum)
-                print(f"Running for {TimeLength} hours")
-                endtime = Now + datetime.timedelta(hours = TimeLength)
-                print(f"EndTime: {endtime}")
-                webhook.send(f"Twitter Bot started {Caption} Running until {endtime}")
+    index = 0
+    print("No index file found. Starting from the beginning")
+    if connect_to_discord.lower() == 'y':
+        webhook.send(f"New Twitter Bot started")
 
-# twitter login
-if Online:
-        auth = tweepy.OAuth1UserHandler(ApiKey, ApiKeySecret, AccessToken, AccessTokenSecret)
-        api = tweepy.API(auth)
-        try:
-                api.verify_credentials()
-                print("twitter OK")
-        except:
-                print("twitter not OK, try again (", sys.exc_info()[0], ")")
-                sys.exit()
-else:
-        print("Offline testing mode")
+# Determine how many frames there are
+ListLength = len(os.listdir(image_folder))
+print(ListLength, "files found")
 
+# Report how long this episode will run for
+TimeLength = (ListLength-index)/(60/wait_time*group)
+print(f"Running for {TimeLength} hours")
+endtime = Now + datetime.timedelta(hours = TimeLength)
+print(f"EndTime: {endtime}")
+if connect_to_discord.lower() == 'y':
+    webhook.send(f"Running until {endtime}")
+    
+# Tweet each image in the folder starting from the saved index
+for i, file in enumerate(os.listdir(image_folder)):
+    # Check if the file is an image
+    if file.endswith('.jpg') or file.endswith('.png') or file.endswith('.gif'):
+        # Skip files before the saved index
+        if i < index:
+            continue
+        print(index)
+        file_path = os.path.join(image_folder, file)
+        filename = file
+        # Split the extension from the filename
+        base_name, file_extension = os.path.splitext(file)
+        
+        # Create a SubRipTime instance with the time in milliseconds
+        timestamp = int(base_name[:8])
+        if subtitled.lower() == 'y':
+            caption = subs.at(timestamp)
+        else:
+            caption = ""
+            
+        Status = f"{tweet_text}\nFrame {index+1}/{ListLength} {hashtags}\n{caption.text if caption else ''}"
+        print(Status)
+        
+        retries = 0
+        success = False
+        while not success and retries < 10:
+            try:
+                # Tweet the image
+                if connect_to_twitter.lower() == 'y':
+                    file = api.media_upload(file_path)
+                    api.update_status(Status, media_ids = [file.media_id])
+                else:
+                    print(f"Processing file {file}")
+                success = True
+            except:
+                print(f'Error while tweeting image {file}')
+                retries += 1
+                print('Trying again in 10 seconds.')
+                if connect_to_discord.lower() == 'y':
+                    webhook.send(f"Twitter Bot encountered an error and is trying again")
+                time.sleep(10)
+        if not success:
+            print(f'Failed to tweet image {file} after {retries} attempts')
+            if connect_to_discord.lower() == 'y':
+                webhook.send(f"Twitter Bot failed to tweet image {file} after {retries} attempts")
+            break
+        
+        # Increment the index
+        index += 1
+        # Save progress to text file
+        with open("progress.txt", "w") as f:
+            f.write(str(index))
+        
+        # Sleep for a specified delay before posting the next frame
+        print(f"Waiting for {delay} seconds till the next frame\n")
+        time.sleep(delay)
+        
+        # Increment the counter
+        counter += 1
 
-#post
-LastDirectory = ""
-index = StartIndex
-group = 0
-while(index <= ListLength):
-        while(index < ListLength):
-                next = (index + 1)
-                Now = datetime.datetime.now()
-                DoPost = True
-                ImageName = ""
-                while(DoPost):
-                        try:
-                                ImageName = ImageList[index]
-
-                                print("file ", index, "/", ListLength-1)
-                                print(ImageName)
-                                sent = SendTweet(Caption, ImageName)
-                                if sent:
-                                        print("OK!")
-                                        group = group+1
-                                        print("On to the next image")
-                                        try:
-                                                with open("state.txt","w") as saveFile:
-                                                        if(next < index):
-                                                                StartIndex = 0
-                                                        ImageName = ImageList[next]
-                                                        saveFile.write(ImageName)
-                                        except:
-                                                webhook.send("Twitter Bot encountered and error!")
-                                                print("Progress not saved to file!! (", sys.exc_info()[0], ")")
-                                        DoPost = False  #no need to retry
-                                        index = next
-                                else:
-                                        print("Trying again")
-                        except:
-                                print("posting broke somewhere, trying again")
-                                for e in sys.exc_info():
-                                        print(e)
-
-                                
-                        if DoPost:      # retry every 5 seconds after error
-                                Now += datetime.timedelta(seconds = 5)
-                                pause.until(Now)
-                        else: #normal posting schedule
-
-                                # Update icon paths
-                                try:
-                                        Directory = os.path.dirname(ImageName)
-                                        # print("dir", Directory)
-                                        if (Directory != LastDirectory):
-                                                print("Directory changed", Directory)
-                                                if os.path.isfile(Directory + IconFile):
-                                                        ChangeIcon(Directory + IconFile)
-                                                if os.path.isfile(Directory + HeaderFile):
-                                                        ChangeHeader(Directory + HeaderFile)
-                                except:
-                                        print("can't update icons, error?")
-                                
-                                LastDirectory = Directory
-                                
-                                NewList = GetFiles(Path, False)        #Reload DB
-                                NewLength = len(NewList)
-                                if NewLength != ListLength:     #If DB changed
-                                        ImageList.clear()       #clear out old (unnecersary?)
-                                        ImageList = NewList     #Use new DB
-                                        print("Database change detected! Change delta : ", NewLength - ListLength, "(",NewLength,")")
-                                        ListLength = NewLength  #Update length
-                                        newIndex = ImageList.index(ImageName)  
-                                        if next != newIndex:     #If point EARLIER than current post has been edited, reseek
-                                                print("Update post index pointer", index, "to", newIndex)
-                                                index = newIndex
-                                if group<groupNum:
-                                    print("Delaying next post for", Interval, "seconds")
-                                    time.sleep(Interval) #Delay next post in group
-                                if group==groupNum:
-                                    minutes = 60
-                                    print("Delaying next post for", groupInterval, "minutes \n")
-                                    time.sleep(groupInterval*minutes) #Delay next post in group
-                                    group = 0
-                                if index+1 == ListLength+1:
-                                    print("Sequence End!")
-                                    if Online:
-                                        api.update_status("#ToBeContinued - End of the episode!")
-                                        webhook.send("Twitter Bot - End of the episode!")
-                                    print("Waiting until user input")
-                                    input("Close the window or press enter to restart...")
-print("Sequence End!")
+        # If the counter has reached 5, sleep for the specified wait time
+        # before resetting the counter and continuing to tweet the next batch of frames
+        if counter == group:
+            print(f"Group posted waiting for {wait_time} seconds\n")
+            time.sleep(wait_time)
+            counter = 0
+            
+# Wait for user input before exiting
+if connect_to_discord.lower() == 'y':
+    webhook.send(f"Twitter Bot finished episode")
+input("End of the video. Press Enter to restart...")
