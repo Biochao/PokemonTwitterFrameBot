@@ -84,9 +84,19 @@ ListLength = len(os.listdir(image_folder))
 print(ListLength, "files found")
 
 # Report how long this episode will run for
-TimeLength = (ListLength-index)/(60/wait_time*group)
-print(f"Running for {TimeLength} hours")
-endtime = Now + datetime.timedelta(hours = TimeLength)
+# Calculate the time length in seconds
+time_length_seconds = (ListLength - index) * wait_time / group
+
+# Create a timedelta object to represent the time length
+time_length = datetime.timedelta(seconds = time_length_seconds)
+
+# Convert the time length to hours
+time_length_hours = time_length.total_seconds() / 3600
+
+# Calculate the end time by adding the time length to the current time
+endtime = datetime.datetime.now() + time_length
+
+print(f"Running for {time_length_hours} hours")
 print(f"EndTime: {endtime}")
 if connect_to_discord.lower() == 'y':
     webhook.send(f"Running until {endtime}")
