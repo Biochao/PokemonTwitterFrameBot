@@ -13,7 +13,7 @@ season_num = 1
 episode_num = 24
 episode_name = "Pokemon-1x24-HaunterVersusKadabra" # Name of subtitle file
 tweet_text = r"Pokémon Season 1 Episode 24 - Haunter versus Kadabra"
-hashtags = r"#pokemon #s1e24 #anime #anipoke"
+hashtags = f"#pokemon #s{season_num}e{episode_num} #anime #anipoke"
 # Timing Config
 delay = 1 # Seconds inbetween each Tweet
 wait_time = 900 # Seconds after a group of Tweets
