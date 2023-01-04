@@ -171,4 +171,5 @@ for i, file in enumerate(os.listdir(image_folder)):
 # Wait for user input before exiting
 if connect_to_discord.lower() == 'y':
     webhook.send(f"Twitter Bot finished episode")
+os.remove("progress.txt")
 input("End of the video. Press Enter to restart...")
