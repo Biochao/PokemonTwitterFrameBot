@@ -146,7 +146,8 @@ for i, file in enumerate(os.listdir(image_folder)):
             print(f'Failed to tweet image {file} after {retries} attempts')
             if connect_to_discord.lower() == 'y':
                 webhook.send(f"Twitter Bot failed to tweet image {file} after {retries} attempts")
-            break
+            # Wait for user input before exiting
+            input("Too many errors. Press Enter to restart...")
         
         # Increment the index
         index += 1
