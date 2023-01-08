@@ -10,6 +10,8 @@ Features include:
   
   • Option to read a subtitle file and add the correct caption to the tweet
   
+  To use srt files for captions frames need to be named in milliseconds by ffmpeg
+  
   • Option for Discord error reporting and end of episode messages
   
   • Option to not connect to Twitter for testing
