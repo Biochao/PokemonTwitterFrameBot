@@ -13,7 +13,7 @@ Features include:
   
   • Option for Discord error reporting and end of episode messages
   
-  • Option to not connect to Facebook for testing
+  • Option to not connect to Twitter for testing
   
   • groups of posts with variable delay
   
